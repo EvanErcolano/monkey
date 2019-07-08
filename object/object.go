@@ -9,6 +9,7 @@ const (
 	BOOLEAN_OBJ      = "BOOLEAN"
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN VALUE"
+	ERROR_OBJ = "ERROR"
 )
 
 type Object interface {
@@ -41,3 +42,20 @@ type ReturnValue struct {
 
 func (rv *ReturnValue) Type() ObjectType { return RETURN_VALUE_OBJ }
 func (rv *ReturnValue) Inspect() string  { return rv.Value.Inspect() }
+
+/* TODO : Exercise
+As you can see, object.Error is really, really simple. It only wraps a string
+that serves as error message. In a production-ready interpreter we’d want to
+attach a stack trace to such error objects, add the line and column numbers
+of its origin and provide more than just a message. That’s not so hard to do,
+provided that line and column numbers are attached to the tokens by the
+lexer. Since our lexer doesn’t do that, to keep things simple, we only use
+an error message, which still serves us a great deal by giving us some
+feedback and stopping execution.
+*/
+type Error struct {
+	Message string
+}
+
+func (e *Error) Type() ObjectType { return ERROR_OBJ}
+func (e *Error) Inspect() string { return "ERROR: " + e.Message}
