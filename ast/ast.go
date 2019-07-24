@@ -220,9 +220,9 @@ func (bs *BlockStatement) String() string {
 }
 
 type FunctionLiteral struct {
-	Token      token.Token // the fn token
-	Parameters []*Identifier
-	Body       *BlockStatement
+    Token      token.Token // The 'fn' token
+    Parameters []*Identifier
+    Body       *BlockStatement
 }
 
 func (fl *FunctionLiteral) expressionNode()      {}
