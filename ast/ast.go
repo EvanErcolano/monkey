@@ -220,9 +220,9 @@ func (bs *BlockStatement) String() string {
 }
 
 type FunctionLiteral struct {
-    Token      token.Token // The 'fn' token
-    Parameters []*Identifier
-    Body       *BlockStatement
+	Token      token.Token // The 'fn' token
+	Parameters []*Identifier
+	Body       *BlockStatement
 }
 
 func (fl *FunctionLiteral) expressionNode()      {}
@@ -244,13 +244,13 @@ func (fl *FunctionLiteral) String() string {
 }
 
 type CallExpression struct {
-	Token token.Token // the '(' token
-	Function Expression // Identifier or Function Literal
+	Token     token.Token // the '(' token
+	Function  Expression  // Identifier or Function Literal
 	Arguments []Expression
 }
 
-func (ce *CallExpression) expressionNode() {}
-func (ce *CallExpression) TokenLiteral() string{ return ce.Token.Literal}
+func (ce *CallExpression) expressionNode()      {}
+func (ce *CallExpression) TokenLiteral() string { return ce.Token.Literal }
 func (ce *CallExpression) String() string {
 	var out bytes.Buffer
 
@@ -266,3 +266,12 @@ func (ce *CallExpression) String() string {
 
 	return out.String()
 }
+
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
+func (sl *StringLiteral) expressionNode()      {}
+func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
+func (sl *StringLiteral) String() string       { return sl.Token.Literal }

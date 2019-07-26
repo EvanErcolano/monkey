@@ -7,8 +7,27 @@ import (
 	"testing"
 )
 
+func TestStringLiteralExpression(t *testing.T) {
+	input := `"hello world";`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt := program.Statements[0].(*ast.ExpressionStatement)
+	literal, ok := stmt.Expression.(*ast.StringLiteral)
+	if !ok {
+		t.Fatalf("exp not *ast.StringLiteral. got=%T", stmt.Expression)
+	}
+
+	if literal.Value != "hello world" {
+		t.Errorf("literal.Value not %q. got=%q", "hello world", literal.Value)
+	}
+}
+
 func TestCallExpressionParsing(t *testing.T) {
-    input := "add(1, 2 * 3, 4 + 5);"
+	input := "add(1, 2 * 3, 4 + 5);"
 
 	l := lexer.New(input)
 	p := New(l)
@@ -17,13 +36,13 @@ func TestCallExpressionParsing(t *testing.T) {
 
 	if len(program.Statements) != 1 {
 		t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
-	1, len(program.Statements))
+			1, len(program.Statements))
 	}
 
 	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
 		t.Fatalf("stmt is not ast.ExpressionStatement. got=%T",
-	program.Statements)
+			program.Statements)
 	}
 
 	exp, ok := stmt.Expression.(*ast.CallExpression)
@@ -46,26 +65,26 @@ func TestCallExpressionParsing(t *testing.T) {
 
 func TestFunctionParameterParsing(t *testing.T) {
 	tests := []struct {
-		input string
+		input          string
 		expectedParams []string
-	} {
+	}{
 		{input: "fn() {};", expectedParams: []string{}},
 		{input: "fn(x) {};", expectedParams: []string{"x"}},
-		{input: "fn(x, y, z) {};", expectedParams:[]string{"x", "y", "z"}},
+		{input: "fn(x, y, z) {};", expectedParams: []string{"x", "y", "z"}},
 	}
 
 	for _, tt := range tests {
 		l := lexer.New(tt.input)
 		p := New(l)
 		program := p.ParseProgram()
-		checkParserErrors(t,p)
+		checkParserErrors(t, p)
 
 		stmt := program.Statements[0].(*ast.ExpressionStatement)
 		function := stmt.Expression.(*ast.FunctionLiteral)
 
 		if len(function.Parameters) != len(tt.expectedParams) {
 			t.Errorf("length parameters wrong. Wanted %d, got=%d\n",
-		len(tt.expectedParams), len(function.Parameters))
+				len(tt.expectedParams), len(function.Parameters))
 		}
 
 		for i, ident := range tt.expectedParams {
@@ -369,17 +388,17 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		expected string
 	}{
 		{
-            "a + add(b * c) + d",
-            "((a + add((b * c))) + d)",
-        },
-        {
-            "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
-            "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
-        },
-        {
-            "add(a + b + c * d / f + g)",
-            "add((((a + b) + ((c * d) / f)) + g))",
-        },
+			"a + add(b * c) + d",
+			"((a + add((b * c))) + d)",
+		},
+		{
+			"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+			"add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+		},
+		{
+			"add(a + b + c * d / f + g)",
+			"add((((a + b) + ((c * d) / f)) + g))",
+		},
 		{
 			"1 + (2 + 3) + 4",
 			"((1 + (2 + 3)) + 4)",
@@ -547,38 +566,37 @@ func TestReturnStatements(t *testing.T) {
 }
 
 func TestLetStatements(t *testing.T) {
-    tests := []struct {
-        input              string
-        expectedIdentifier string
-        expectedValue      interface{}
-    }{
-        {"let x = 5;", "x", 5},
-        {"let y = true;", "y", true},
-        {"let foobar = y;", "foobar", "y"},
-    }
+	tests := []struct {
+		input              string
+		expectedIdentifier string
+		expectedValue      interface{}
+	}{
+		{"let x = 5;", "x", 5},
+		{"let y = true;", "y", true},
+		{"let foobar = y;", "foobar", "y"},
+	}
 
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
 
-    for _, tt := range tests {
-        l := lexer.New(tt.input)
-        p := New(l)
-        program := p.ParseProgram()
-        checkParserErrors(t, p)
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
 
-        if len(program.Statements) != 1 {
-            t.Fatalf("program.Statements does not contain 1 statements. got=%d",
-                len(program.Statements))
-        }
+		stmt := program.Statements[0]
+		if !testLetStatement(t, stmt, tt.expectedIdentifier) {
+			return
+		}
 
-        stmt := program.Statements[0]
-        if !testLetStatement(t, stmt, tt.expectedIdentifier) {
-            return
-        }
-
-        val := stmt.(*ast.LetStatement).Value
-        if !testLiteralExpression(t, val, tt.expectedValue) {
-            return
-        }
-    }
+		val := stmt.(*ast.LetStatement).Value
+		if !testLiteralExpression(t, val, tt.expectedValue) {
+			return
+		}
+	}
 }
 
 func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
