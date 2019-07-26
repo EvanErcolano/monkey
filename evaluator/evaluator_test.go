@@ -7,8 +7,25 @@ import (
 	"testing"
 )
 
+func TestStringLiteral(t *testing.T) {
+	input := `"Hello World!"`
+
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not String. got=%T (%v)", evaluated, evaluated)
+	}
+
+	if str.Value != "Hello World!" {
+		t.Errorf("String has wrong value. got=%q", str.Value)
+	}
+}
+
+// TODO: how do globals work?
+// I think they don't w/ this impl... we will have to keep a map of the top
+// level declarations if we want globals in our language.
 func TestClosures(t *testing.T) {
-    input := `
+	input := `
 let newAdder = fn(x) {
   fn(y) { x + y };
 };
@@ -16,9 +33,8 @@ let newAdder = fn(x) {
 let addTwo = newAdder(2);
 addTwo(2);`
 
-    testIntegerObject(t, testEval(input), 4)
+	testIntegerObject(t, testEval(input), 4)
 }
-
 
 func TestFunctionApplication(t *testing.T) {
 	tests := []struct {
