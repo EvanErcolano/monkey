@@ -13,6 +13,8 @@ const (
 	// INT represents integers
 	INT = "INT"
 
+	STRING = "STRING"
+
 	// OPERATORS
 	ASSIGN   = "="
 	BANG     = "!"
