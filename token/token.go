@@ -36,6 +36,8 @@ const (
 	RPAREN = ")"
 	LBRACE = "{"
 	RBRACE = "}"
+	LBRACKET = "["
+	RBRACKET = "]"
 
 	// KEYWORDS
 	FUNCTION = "FUNCTION"
