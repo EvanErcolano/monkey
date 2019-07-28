@@ -1,12 +1,12 @@
 package repl
 
 import (
-	"monkey/object"
 	"bufio"
 	"fmt"
 	"io"
 	"monkey/evaluator"
 	"monkey/lexer"
+	"monkey/object"
 	"monkey/parser"
 )
 
@@ -30,6 +30,11 @@ func Start(in io.Reader, out io.Writer) {
 	env := object.NewEnvironment()
 
 	for {
+		// TODO: in order to allow multi line input (common for closures) we will need
+		// to alter the Scanner logic... taking input until matching braces are finished
+		// or EOF? / empty line + newline?
+		// additionally if we want to impl forward / backward / history logic I think this
+		// would be the place to do so.
 		fmt.Printf(PROMPT)
 		scanned := scanner.Scan()
 		if !scanned {
