@@ -20,7 +20,7 @@ const (
 	PRODUCT     // *
 	PREFIX      // -X or !X
 	CALL        // myFunction(X)
-    INDEX       // array[index]
+	INDEX       // array[index]
 )
 
 type Parser struct {
@@ -93,7 +93,7 @@ var precedences = map[token.TokenType]int{
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
-    token.LBRACKET: INDEX,
+	token.LBRACKET: INDEX,
 }
 
 func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
@@ -128,13 +128,14 @@ func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{}
 	program.Statements = []ast.Statement{}
 
-	for p.curToken.Type != token.EOF {
+	for !p.curTokenIs(token.EOF) {
 		stmt := p.parseStatement()
 		if stmt != nil {
 			program.Statements = append(program.Statements, stmt)
 		}
 		p.nextToken()
 	}
+
 	return program
 }
 
@@ -179,7 +180,7 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 	}
 }
 
-func (p *Parser) parseLetStatement() ast.Statement {
+func (p *Parser) parseLetStatement() *ast.LetStatement {
 	stmt := &ast.LetStatement{Token: p.curToken}
 
 	if !p.expectPeek(token.IDENT) {
@@ -196,7 +197,7 @@ func (p *Parser) parseLetStatement() ast.Statement {
 
 	stmt.Value = p.parseExpression(LOWEST)
 
-	for !p.curTokenIs(token.SEMICOLON) {
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
@@ -368,14 +369,13 @@ func (p *Parser) parseIfExpression() ast.Expression {
 }
 
 func (p *Parser) parseFunctionLiteral() ast.Expression {
-	// `fn(x,y) {x + y; }`
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 
 	if !p.expectPeek(token.LPAREN) {
 		return nil
 	}
 
-	lit.Parameters = p.parseFunctionParemeters()
+	lit.Parameters = p.parseFunctionParameters()
 
 	if !p.expectPeek(token.LBRACE) {
 		return nil
@@ -386,7 +386,7 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	return lit
 }
 
-func (p *Parser) parseFunctionParemeters() []*ast.Identifier {
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	identifiers := []*ast.Identifier{}
 
 	if p.peekTokenIs(token.RPAREN) {
@@ -459,14 +459,14 @@ func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
 // parseIndexExpression parses the index expression that should
 // semantically evaluate to a integer.
 func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
-    exp := &ast.IndexExpression{Token: p.curToken, Left: left}
+	exp := &ast.IndexExpression{Token: p.curToken, Left: left}
 
-    p.nextToken()
-    exp.Index = p.parseExpression(LOWEST)
+	p.nextToken()
+	exp.Index = p.parseExpression(LOWEST)
 
-    if !p.expectPeek(token.RBRACKET) {
-        return nil
-    }
+	if !p.expectPeek(token.RBRACKET) {
+		return nil
+	}
 
-    return exp
+	return exp
 }
