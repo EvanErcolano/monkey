@@ -7,6 +7,72 @@ import (
 	"testing"
 )
 
+func TestHashLiterals(t *testing.T) {
+    input := `let two = "two";
+    {
+        "one": 10 - 9,
+        two: 1 + 1,
+        "thr" + "ee": 6 / 2,
+        4: 4,
+        true: 5,
+        false: 6
+    }`
+
+	evaluated := testEval(input)
+	result, ok := evaluated.(*object.Hash)
+	if !ok {
+		t.Fatalf("Eval didn't return Hash. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	expected := map[object.HashKey]int64{
+		(&object.String{Value: "one"}).HashKey():   1,
+		(&object.String{Value: "two"}).HashKey():   2,
+		(&object.String{Value: "three"}).HashKey(): 3,
+		(&object.Integer{Value: 4}).HashKey():      4,
+		TRUE.HashKey():                             5,
+		FALSE.HashKey():                            6,
+	}
+
+	if len(result.Pairs) != len(expected) {
+		t.Fatalf("Hash has wrong num of pairs. got=%d", len(result.Pairs))
+	}
+
+	for expectedKey, expectedValue := range expected {
+		pair, ok := result.Pairs[expectedKey]
+		if !ok {
+			t.Errorf("no pair for given key in Pairs")
+		}
+
+		testIntegerObject(t, pair.Value, expectedValue)
+	}
+}
+
+func TestMultiLineEvaluation(t *testing.T) {
+	input := `
+let map = fn(arr, f) {
+	let iter = fn(arr, accumulated) {
+		if (len(arr) == 0) {
+		accumulated
+		} else {
+		iter(rest(arr), push(accumulated, f(first(arr))));
+		}
+	};
+	
+	iter(arr, []);
+};
+
+let a = [1, 2, 3, 4];
+let double = fn(x) { x * 2 };
+map(a, double);
+`
+
+	evaluated := testEval(input)
+	result, _ := evaluated.(*object.Array)
+	if result.Inspect() != "[2, 4, 6, 8]" {
+		t.Fatalf("Did not equal expected val")
+	}
+}
+
 func TestArrayIndexExpressions(t *testing.T) {
 	tests := []struct {
 		input    string
