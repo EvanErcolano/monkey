@@ -21,6 +21,7 @@ const (
 	BUILTIN_OBJ      = "BUILTIN"
 	ARRAY_OBJ        = "ARRAY"
 	HASH_OBJ         = "HASH"
+	QUOTE_OBJ        = "QUOTE"
 )
 
 // Object is an interface for monkey's internal object system
@@ -140,7 +141,7 @@ type HashKey struct {
 }
 
 type HashPair struct {
-	Key Object
+	Key   Object
 	Value Object
 }
 
@@ -168,7 +169,7 @@ func (h *Hash) Inspect() string {
 }
 
 type Hashable interface {
-    HashKey() HashKey
+	HashKey() HashKey
 }
 
 func (b *Boolean) HashKey() HashKey {
@@ -192,4 +193,13 @@ func (s *String) HashKey() HashKey {
 	h.Write([]byte(s.Value))
 
 	return HashKey{Type: s.Type(), Value: h.Sum64()}
+}
+
+type Quote struct {
+	Node ast.Node
+}
+
+func (q *Quote) Type() ObjectType { return QUOTE_OBJ }
+func (q *Quote) Inspect() string {
+	return "Quote(" + q.Node.String() + ")"
 }
