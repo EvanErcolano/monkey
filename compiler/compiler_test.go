@@ -37,6 +37,8 @@ func TestIntegerArithmetic(t *testing.T) {
     runCompilerTests(t, tests)
 }
 
+// runCompilerTests checks, given a monkey input, do we properly compile
+// it down to bytecode? Did we load our constant pool properly? etc.
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
     t.Helper()
 
@@ -64,6 +66,8 @@ func runCompilerTests(t *testing.T, tests []compilerTestCase) {
     }
 }
 
+// testInstructions compares compiled bytecode instructions to the
+// expected output bytecode instructions.
 func testInstructions(
     expected []code.Instructions,
     actual code.Instructions,
@@ -85,6 +89,8 @@ func testInstructions(
     return nil
 }
 
+// concatInstructions flattens instructions contained in a slice
+// of byte slices down to a single byte slice.
 func concatInstructions(s []code.Instructions) code.Instructions {
 	out := code.Instructions{}
 
@@ -95,6 +101,8 @@ func concatInstructions(s []code.Instructions) code.Instructions {
 	return out
 }
 
+// testConstants ensures our bytecode constant pool is populated with
+// the expected values.
 func testConstants(
 	t *testing.T,
 	expected []interface{},

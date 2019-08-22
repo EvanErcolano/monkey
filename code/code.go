@@ -30,6 +30,7 @@ func (ins Instructions) String() string {
 	return out.String()
 }
 
+// fmtInstruction formats our bytecode instructions
 func (ins Instructions) fmtInstruction(def *Definition, operands []int) string {
 	operandCount := len(def.OperandWidths)
 

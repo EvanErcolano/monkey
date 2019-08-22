@@ -12,7 +12,6 @@ type Compiler struct {
 	constants    []object.Object // our constant pool
 }
 
-// New creates an empty Compiler
 func New() *Compiler {
 	return &Compiler{
 		instructions: code.Instructions{},
@@ -20,6 +19,7 @@ func New() *Compiler {
 	}
 }
 
+// Compile our ast down to it's respective bytecode representation.
 func (c *Compiler) Compile(node ast.Node) error {
 	return nil
 }
