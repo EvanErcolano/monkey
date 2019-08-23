@@ -27,7 +27,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		for _, s := range node.Statements {
 			err := c.Compile(s)
 			if err != nil {
-				return nil
+				return err
 			}
 		}
 	case *ast.ExpressionStatement:
@@ -45,6 +45,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		if err != nil {
 			return err
 		}
+
 		switch node.Operator {
 		case "+":
 			c.emit(code.OpAdd)
@@ -71,13 +72,13 @@ func (c *Compiler) addConstant(obj object.Object) int {
 }
 
 // emit generates bytecode instructions and add them into memory.
-func (c * Compiler) emit(op code.Opcode, operands ...int) int {
+func (c *Compiler) emit(op code.Opcode, operands ...int) int {
 	ins := code.Make(op, operands...)
 	pos := c.addInstruction(ins)
 	return pos
 }
 
-func (c* Compiler) addInstruction(ins []byte) int {
+func (c *Compiler) addInstruction(ins []byte) int {
 	posNewInstruction := len(c.instructions)
 	c.instructions = append(c.instructions, ins...)
 	return posNewInstruction

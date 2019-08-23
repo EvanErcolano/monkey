@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"monkey/evaluator"
+	"monkey/compiler"
 	"monkey/lexer"
-	"monkey/object"
 	"monkey/parser"
+	"monkey/vm"
 )
 
 const MONKEY_FACE = `            __,__
@@ -27,15 +27,10 @@ const PROMPT = ">> "
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
-	env := object.NewEnvironment()
-	macroEnv := object.NewEnvironment()
+	// env := object.NewEnvironment()
+	// macroEnv := object.NewEnvironment()
 
 	for {
-		// TODO: in order to allow multi line input (common for closures) we will need
-		// to alter the Scanner logic... taking input until matching braces are finished
-		// or EOF? / empty line + newline?
-		// additionally if we want to impl forward / backward / history logic I think this
-		// would be the place to do so.
 		fmt.Printf(PROMPT)
 		scanned := scanner.Scan()
 		if !scanned {
@@ -52,14 +47,23 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		evaluator.DefineMacros(program, macroEnv)
-		expanded := evaluator.ExpandMacros(program, macroEnv)
-
-		evaluated := evaluator.Eval(expanded, env)
-		if evaluated != nil {
-			io.WriteString(out, evaluated.Inspect())
-			io.WriteString(out, "\n")
+		comp := compiler.New()
+		err := comp.Compile(program)
+		if err != nil {
+			fmt.Fprintf(out, "Compilation failed:\n %s\n", err)
+			continue
 		}
+
+		machine := vm.New(comp.ByteCode())
+		err = machine.Run()
+		if err != nil {
+			fmt.Fprintf(out, "Executing bytecode failed:\n %s\n", err)
+			continue
+		}
+
+		stackTop := machine.StackTop()
+		io.WriteString(out, stackTop.Inspect())
+		io.WriteString(out, "\n")
 	}
 }
 
