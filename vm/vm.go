@@ -34,12 +34,12 @@ func New(bytecode *compiler.Bytecode) *VM {
 func (vm *VM) Run() error {
 	// FETCH our instruction
 	for ip := 0; ip < len(vm.instructions); ip++ {
-		// DECODE the instruction
 		op := code.Opcode(vm.instructions[ip])
 
-		// EXECUTE the instruction based off of the opcode
+		// DECODE the instruction
 		switch op {
 		case code.OpConstant:
+			// EXECUTE the instruction based off of the opcode
 			constIndex := code.ReadUint16(vm.instructions[ip+1:])
 			ip += 2
 
@@ -48,6 +48,15 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+		case code.OpAdd:
+			// pop last two instructions from the stack into mem
+			right := vm.pop()
+			left := vm.pop()
+			rightValue := right.(*object.Integer).Value
+			leftValue := left.(*object.Integer).Value
+
+			result := leftValue + rightValue
+			vm.push(&object.Integer{Value: result})
 		}
 	}
 	return nil
@@ -62,6 +71,12 @@ func (vm *VM) push(o object.Object) error {
 	vm.sp++
 
 	return nil
+}
+
+func (vm *VM) pop() object.Object {
+	o := vm.stack[vm.sp-1]
+	vm.sp--
+	return o
 }
 
 // StackTop returns our stack's top element. The top element in the stack

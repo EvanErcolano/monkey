@@ -9,6 +9,7 @@ import (
 type Instructions []byte
 
 // String outputs our byte slice instructions in a more readable form
+// formatted as the it's index in our instructions and the instruction
 func (ins Instructions) String() string {
 	var out bytes.Buffer
 
@@ -40,6 +41,8 @@ func (ins Instructions) fmtInstruction(def *Definition, operands []int) string {
 	}
 
 	switch operandCount {
+	case 0:
+		return def.Name
 	case 1:
 		return fmt.Sprintf("%s %d", def.Name, operands[0])
 	}
@@ -51,6 +54,7 @@ type Opcode byte
 
 const (
 	OpConstant Opcode = iota
+	OpAdd
 )
 
 // Definition helps make our opcodes readable and
@@ -64,6 +68,7 @@ type Definition struct {
 // what its human-readable name is
 var definitions = map[Opcode]*Definition{
 	OpConstant: &Definition{"OpConstant", []int{2}}, // only operand is 2 bytes wide
+	OpAdd:      {"OpAdd", []int{}},                  // empty slice b/c this req's no operands, uses stack
 }
 
 // Lookup looks up an Opcode definition via our definition map

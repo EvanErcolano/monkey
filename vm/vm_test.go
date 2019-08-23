@@ -19,7 +19,7 @@ func TestIntegerArithmetic(t *testing.T) {
 	tests := []vmTestCase{
 		{"1", 1},
 		{"2", 2},
-		{"1 + 2", 2}, // TODO: fix this, passes b/c 2 is the top of the stack.
+		{"1 + 2", 3},
 	}
 
 	runVmTests(t, tests)
@@ -37,7 +37,7 @@ func runVmTests(t *testing.T, tests []vmTestCase) {
 			t.Fatalf("compiler error: %s", err)
 		}
 
-		vm := New(comp.ByteCode()) // wut?
+		vm := New(comp.ByteCode())
 		err = vm.Run()
 		if err != nil {
 			t.Fatalf("vm error: %s", err)
