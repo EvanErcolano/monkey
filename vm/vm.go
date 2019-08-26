@@ -48,15 +48,11 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
-		case code.OpAdd:
-			// pop last two instructions from the stack into mem
-			right := vm.pop()
-			left := vm.pop()
-			rightValue := right.(*object.Integer).Value
-			leftValue := left.(*object.Integer).Value
-
-			result := leftValue + rightValue
-			vm.push(&object.Integer{Value: result})
+		case code.OpAdd, code.OpSub, code.OpMul, code.OpDiv:
+			err := vm.executeBinaryOperation(op)
+			if err != nil {
+				return err
+			}
 		case code.OpPop:
 			// instruction we use after expression statements
 			// to keep our stack cleaned up if the expr result isn't used
@@ -64,6 +60,45 @@ func (vm *VM) Run() error {
 		}
 	}
 	return nil
+}
+
+func (vm *VM) executeBinaryOperation(op code.Opcode) error {
+	right := vm.pop()
+	left := vm.pop()
+
+	rightType := right.Type()
+	leftType := left.Type()
+
+	if leftType == object.INTEGER_OBJ && rightType == object.INTEGER_OBJ {
+		return vm.executeBinaryIntegerOperation(op, left, right)
+	}
+
+	return fmt.Errorf("unsupported types for binary operation: %s %s", leftType, rightType)
+}
+
+// executeBinaryIntegerOperation takes an opcode + it's operands and performs
+// the correct operation on those operands. The result will be pushed to the stack.
+func (vm *VM) executeBinaryIntegerOperation(
+	op code.Opcode,
+	left, right object.Object,
+) error {
+	leftValue := left.(*object.Integer).Value
+	rightValue := right.(*object.Integer).Value
+
+	var result int64
+
+	switch op {
+	case code.OpAdd:
+		result = leftValue + rightValue
+	case code.OpSub:
+		result = leftValue - rightValue
+	case code.OpMul:
+		result = leftValue * rightValue
+	case code.OpDiv:
+		result = leftValue / rightValue
+	}
+
+	return vm.push(&object.Integer{Value: result})
 }
 
 func (vm *VM) push(o object.Object) error {
@@ -96,6 +131,6 @@ func (vm *VM) StackTop() object.Object {
 // LastPoppedStackElem is a test only method which returns the top of the stack.
 // Since we don't explicitly clear the stack off after we use it, we can see
 // the item that was last popped off the stack here.
-func (vm * VM) LastPoppedStackElem() object.Object {
+func (vm *VM) LastPoppedStackElem() object.Object {
 	return vm.stack[vm.sp]
 }

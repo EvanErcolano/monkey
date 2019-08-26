@@ -17,78 +17,108 @@ func parse(input string) *ast.Program {
 }
 
 type compilerTestCase struct {
-    input                string
-    expectedConstants    []interface{}
-    expectedInstructions []code.Instructions
+	input                string
+	expectedConstants    []interface{}
+	expectedInstructions []code.Instructions
 }
 
 func TestIntegerArithmetic(t *testing.T) {
-    tests := []compilerTestCase{
-        {
-            input:             "1 + 2",
-            expectedConstants: []interface{}{1, 2},
-            expectedInstructions: []code.Instructions{
-                code.Make(code.OpConstant, 0),
-                code.Make(code.OpConstant, 1),
-                code.Make(code.OpAdd),
-                code.Make(code.OpPop),
-            },
-        },
-    }
+	tests := []compilerTestCase{
+		{
+			input:             "1 + 2",
+			expectedConstants: []interface{}{1, 2},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpAdd),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "1 - 2",
+			expectedConstants: []interface{}{1, 2},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpSub),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "1 * 2",
+			expectedConstants: []interface{}{1, 2},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpMul),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "1 / 2",
+			expectedConstants: []interface{}{1, 2},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpDiv),
+				code.Make(code.OpPop),
+			},
+		},
+	}
 
-    runCompilerTests(t, tests)
+	runCompilerTests(t, tests)
 }
 
 // runCompilerTests checks, given a monkey input, do we properly compile
 // it down to bytecode? Did we load our constant pool properly? etc.
 func runCompilerTests(t *testing.T, tests []compilerTestCase) {
-    t.Helper()
+	t.Helper()
 
-    for _, tt := range tests {
-        program := parse(tt.input)
+	for _, tt := range tests {
+		program := parse(tt.input)
 
-        compiler := New()
+		compiler := New()
 		err := compiler.Compile(program) // get out AST
 
-        if err != nil {
-            t.Fatalf("compiler error: %s", err)
-        }
+		if err != nil {
+			t.Fatalf("compiler error: %s", err)
+		}
 
-        bytecode := compiler.ByteCode() // AST -> bytecode instructions
+		bytecode := compiler.ByteCode() // AST -> bytecode instructions
 
-        err = testInstructions(tt.expectedInstructions, bytecode.Instructions)
-        if err != nil {
-            t.Fatalf("testInstructions failed: %s", err)
-        }
+		err = testInstructions(tt.expectedInstructions, bytecode.Instructions)
+		if err != nil {
+			t.Fatalf("testInstructions failed: %s", err)
+		}
 
-        err = testConstants(t, tt.expectedConstants, bytecode.Constants)
-        if err != nil {
-            t.Fatalf("testConstants failed: %s", err)
-        }
-    }
+		err = testConstants(t, tt.expectedConstants, bytecode.Constants)
+		if err != nil {
+			t.Fatalf("testConstants failed: %s", err)
+		}
+	}
 }
 
 // testInstructions compares compiled bytecode instructions to the
 // expected output bytecode instructions.
 func testInstructions(
-    expected []code.Instructions,
-    actual code.Instructions,
+	expected []code.Instructions,
+	actual code.Instructions,
 ) error {
-    concatted := concatInstructions(expected)
+	concatted := concatInstructions(expected)
 
-    if len(actual) != len(concatted) {
-        return fmt.Errorf("wrong instructions length.\nwant=%q\ngot =%q",
-            concatted, actual)
-    }
+	if len(actual) != len(concatted) {
+		return fmt.Errorf("wrong instructions length.\nwant=%q\ngot =%q",
+			concatted, actual)
+	}
 
-    for i, ins := range concatted {
-        if actual[i] != ins {
-            return fmt.Errorf("wrong instruction at %d.\nwant=%q\ngot =%q",
-                i, concatted, actual)
-        }
-    }
+	for i, ins := range concatted {
+		if actual[i] != ins {
+			return fmt.Errorf("wrong instruction at %d.\nwant=%q\ngot =%q",
+				i, concatted, actual)
+		}
+	}
 
-    return nil
+	return nil
 }
 
 // concatInstructions flattens instructions contained in a slice
