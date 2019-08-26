@@ -35,10 +35,11 @@ func (c *Compiler) Compile(node ast.Node) error {
 		if err != nil {
 			return err
 		}
+		c.emit(code.OpPop)
 	case *ast.InfixExpression:
 		err := c.Compile(node.Left)
 		if err != nil {
-			return err
+			return err	
 		}
 
 		err = c.Compile(node.Right)

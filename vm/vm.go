@@ -57,6 +57,10 @@ func (vm *VM) Run() error {
 
 			result := leftValue + rightValue
 			vm.push(&object.Integer{Value: result})
+		case code.OpPop:
+			// instruction we use after expression statements
+			// to keep our stack cleaned up if the expr result isn't used
+			vm.pop()
 		}
 	}
 	return nil
@@ -87,4 +91,11 @@ func (vm *VM) StackTop() object.Object {
 		return nil
 	}
 	return vm.stack[vm.sp-1]
+}
+
+// LastPoppedStackElem is a test only method which returns the top of the stack.
+// Since we don't explicitly clear the stack off after we use it, we can see
+// the item that was last popped off the stack here.
+func (vm * VM) LastPoppedStackElem() object.Object {
+	return vm.stack[vm.sp]
 }
