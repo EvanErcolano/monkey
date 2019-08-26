@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// bytecode instructions
 type Instructions []byte
 
 // String outputs our byte slice instructions in a more readable form
@@ -63,6 +64,10 @@ const (
 	OpMul
 	OpDiv
 
+	OpEqual
+	OpNotEqual
+	OpGreaterThan
+
 	OpPop
 )
 
@@ -77,16 +82,18 @@ type Definition struct {
 // what its human-readable name is
 var definitions = map[Opcode]*Definition{
 	OpConstant: &Definition{"OpConstant", []int{2}}, // only operand is 2 bytes wide
-	OpTrue: {"OpTrue", []int{}},
-	OpFalse: {"OpFalse", []int{}},
+	OpTrue:     {"OpTrue", []int{}},
+	OpFalse:    {"OpFalse", []int{}},
 
 	// Infix Expressions
-
-	// Arithmatic Operations use the stack for their operands so their width is 0
 	OpAdd: {"OpAdd", []int{}},
 	OpSub: {"OpSub", []int{}},
 	OpMul: {"OpMul", []int{}},
 	OpDiv: {"OpDiv", []int{}},
+
+	OpEqual:       {"OpEqual", []int{}},
+	OpNotEqual:    {"OpNotEqual", []int{}},
+	OpGreaterThan: {"OpGreaterThan", []int{}},
 
 	OpPop: {"OpPop", []int{}},
 }

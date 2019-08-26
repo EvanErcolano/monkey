@@ -10,7 +10,7 @@ import (
 // Compiler is a bytecode compiler
 type Compiler struct {
 	instructions code.Instructions
-	constants    []object.Object // our constant pool
+	constants    []object.Object // our constant pool, we refer to this by index
 }
 
 func New() *Compiler {
@@ -37,6 +37,21 @@ func (c *Compiler) Compile(node ast.Node) error {
 		}
 		c.emit(code.OpPop)
 	case *ast.InfixExpression:
+		if node.Operator == "<" {
+			// re-ordering our < to a > by switching the order of operands
+			err := c.Compile(node.Right)
+			if err != nil {
+				return err
+			}
+
+			err = c.Compile(node.Left)
+			if err != nil {
+				return err
+			}
+
+			c.emit(code.OpGreaterThan)
+			return nil
+		}
 		err := c.Compile(node.Left)
 		if err != nil {
 			return err
@@ -56,6 +71,12 @@ func (c *Compiler) Compile(node ast.Node) error {
 			c.emit(code.OpMul)
 		case "/":
 			c.emit(code.OpDiv)
+		case "==":
+			c.emit(code.OpEqual)
+		case "!=":
+			c.emit(code.OpNotEqual)
+		case ">":
+			c.emit(code.OpGreaterThan)
 		default:
 			return fmt.Errorf("unknown operator %s", node.Operator)
 		}
