@@ -9,6 +9,14 @@ import (
 
 const StackSize = 2048
 
+var (
+	// True + False are Immutable unique values, so we define them globally here.
+	// No need to create multiple boolean objects when we can just reference
+	// these instead.
+	True  = &object.Boolean{Value: true}
+	False = &object.Boolean{Value: false}
+)
+
 // VM is our virtual machine utilizing a stack machine architecture. It holds a
 // constant pool and the instructions emitted by our bytecode compiler.
 type VM struct {
@@ -57,6 +65,16 @@ func (vm *VM) Run() error {
 			// instruction we use after expression statements
 			// to keep our stack cleaned up if the expr result isn't used
 			vm.pop()
+		case code.OpTrue:
+			err := vm.push(True)
+			if err != nil {
+				return err
+			}
+		case code.OpFalse:
+			err := vm.push(False)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

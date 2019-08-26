@@ -66,7 +66,12 @@ func (c *Compiler) Compile(node ast.Node) error {
 		// bytecode constant instruction with reference to the index.
 		integer := &object.Integer{Value: node.Value}
 		c.emit(code.OpConstant, c.addConstant(integer))
-
+	case *ast.Boolean:
+		if node.Value {
+			c.emit(code.OpTrue)
+		} else {
+			c.emit(code.OpFalse)
+		}
 	}
 	return nil
 }

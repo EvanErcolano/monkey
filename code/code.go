@@ -55,6 +55,9 @@ type Opcode byte
 const (
 	OpConstant Opcode = iota
 
+	OpTrue
+	OpFalse
+
 	OpAdd
 	OpSub
 	OpMul
@@ -74,11 +77,12 @@ type Definition struct {
 // what its human-readable name is
 var definitions = map[Opcode]*Definition{
 	OpConstant: &Definition{"OpConstant", []int{2}}, // only operand is 2 bytes wide
+	OpTrue: {"OpTrue", []int{}},
+	OpFalse: {"OpFalse", []int{}},
 
 	// Infix Expressions
 
-	// Arithmatic Operations use the stack for their operands so their
-	// width is 0
+	// Arithmatic Operations use the stack for their operands so their width is 0
 	OpAdd: {"OpAdd", []int{}},
 	OpSub: {"OpSub", []int{}},
 	OpMul: {"OpMul", []int{}},
