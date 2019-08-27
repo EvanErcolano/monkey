@@ -90,8 +90,24 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
-		}
+		case code.OpJump:
+			// decode the integer address ahead of the opcode by 1
+			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
+			// set the instruction pointer to the target of our jump
+			// since the loop will inc ip with each iteration, we set
+			// the ip to the position directly before where we want
+			ip = pos - 1
+		case code.OpJumpNotTruthy:
+			// decode the target address of our jumpIfNotTruthy
+			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
+			// inc IP by 2 so we skip over the 16bit operand we decoded above
+			ip += 2
 
+			condition := vm.pop()
+			if !isTruthy(condition) {
+				ip = pos - 1
+			}
+		}
 	}
 	return nil
 }
@@ -238,4 +254,13 @@ func (vm *VM) StackTop() object.Object {
 // the item that was last popped off the stack here.
 func (vm *VM) LastPoppedStackElem() object.Object {
 	return vm.stack[vm.sp]
+}
+
+func isTruthy(obj object.Object) bool {
+	switch obj := obj.(type) {
+	case *object.Boolean:
+		return obj.Value
+	default:
+		return true
+	}
 }
