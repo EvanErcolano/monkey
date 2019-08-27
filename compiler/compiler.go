@@ -7,16 +7,25 @@ import (
 	"monkey/object"
 )
 
+type EmittedInstruction struct {
+	Opcode   code.Opcode
+	Position int
+}
+
 // Compiler is a bytecode compiler
 type Compiler struct {
-	instructions code.Instructions
-	constants    []object.Object // our constant pool, we refer to this by index
+	instructions        code.Instructions
+	constants           []object.Object // our constant pool, we refer to this by index
+	lastInstruction     EmittedInstruction
+	previousInstruction EmittedInstruction
 }
 
 func New() *Compiler {
 	return &Compiler{
-		instructions: code.Instructions{},
-		constants:    []object.Object{},
+		instructions:        code.Instructions{},
+		constants:           []object.Object{},
+		lastInstruction:     EmittedInstruction{},
+		previousInstruction: EmittedInstruction{},
 	}
 }
 
@@ -30,12 +39,75 @@ func (c *Compiler) Compile(node ast.Node) error {
 				return err
 			}
 		}
+	case *ast.BlockStatement:
+		for _, s := range node.Statements {
+			err := c.Compile(s)
+			if err != nil {
+				return err
+			}
+		}
 	case *ast.ExpressionStatement:
 		err := c.Compile(node.Expression)
 		if err != nil {
 			return err
 		}
+
+		// Of our 3 types of statements [let, return, expr]:
+		// The first two explicitly reuse the value that their child expr
+		// nodes produces... while expr statements only wrap expessions so
+		// that they can occur on their own. As a result,  the value they
+		// produce is not reused by definition. So we need to keep our
+		// stack clean and explicity remove them off of the stack after
+		// execution.
 		c.emit(code.OpPop)
+	case *ast.IfExpression:
+		err := c.Compile(node.Condition)
+		if err != nil {
+			return err
+		}
+
+		// emit a bogus addr value as a filler until we can back-patch in
+		// the correct address value. We don't know where to jump yet.
+		// we save the position so we can swap out the bogus value with
+		// the correct one later on
+		jumpNotTruthyPos := c.emit(code.OpJumpNotTruthy, 9999)
+
+		err = c.Compile(node.Consequence)
+		if err != nil {
+			return err
+		}
+
+		if c.lastInstructionIsPop() {
+			c.removeLastPop()
+		}
+
+		if node.Alternative == nil {
+			// calculate the bytecode position after our block of consequence instructions
+			afterConsequencePos := len(c.instructions)
+			// Fill in our bogus operand in jumpNotTruthy with the afterConsequence position
+			c.changeOperand(jumpNotTruthyPos, afterConsequencePos)
+		} else {
+			// Emit an OpJump instruction with a bogus value that we will back-patch
+			jumpPos := c.emit(code.OpJump, 9999)
+
+			// use the instruction position after our jump instruction to fill in
+			// the address of where jumpNotTruthy (conditional jump) should go
+			afterConsequencePos := len(c.instructions)
+			c.changeOperand(jumpNotTruthyPos, afterConsequencePos)
+
+			err := c.Compile(node.Alternative)
+			if err != nil {
+				return err
+			}
+
+			if c.lastInstructionIsPop() {
+				c.removeLastPop()
+			}
+
+			afterConsequencePos = len(c.instructions)
+			c.changeOperand(jumpPos, afterConsequencePos)
+		}
+
 	case *ast.InfixExpression:
 		if node.Operator == "<" {
 			// re-ordering our < to a > by switching the order of operands
@@ -122,6 +194,9 @@ func (c *Compiler) addConstant(obj object.Object) int {
 func (c *Compiler) emit(op code.Opcode, operands ...int) int {
 	ins := code.Make(op, operands...)
 	pos := c.addInstruction(ins)
+
+	c.setLastInstruction(op, pos)
+
 	return pos
 }
 
@@ -129,6 +204,44 @@ func (c *Compiler) addInstruction(ins []byte) int {
 	posNewInstruction := len(c.instructions)
 	c.instructions = append(c.instructions, ins...)
 	return posNewInstruction
+}
+
+// setLastInstruction ensures our previous and last instruction are
+// updated and pointing to the right instructions.
+func (c *Compiler) setLastInstruction(op code.Opcode, pos int) {
+	previous := c.lastInstruction
+	last := EmittedInstruction{Opcode: op, Position: pos}
+
+	c.previousInstruction = previous
+	c.lastInstruction = last
+}
+
+func (c *Compiler) lastInstructionIsPop() bool {
+	return c.lastInstruction.Opcode == code.OpPop
+}
+
+func (c *Compiler) removeLastPop() {
+	c.instructions = c.instructions[:c.lastInstruction.Position]
+	c.lastInstruction = c.previousInstruction
+}
+
+// changeOperand recreates the instructions at the given position
+// with the new operand value and swaps the new instructions out in
+// the position where the old one was - note we will only use this to
+// replace instructions of the same type and length
+func (c *Compiler) changeOperand(opPos int, operand int) {
+	op := code.Opcode(c.instructions[opPos])
+	newInstruction := code.Make(op, operand)
+
+	c.replaceInstruction(opPos, newInstruction)
+}
+
+// replaceInstruction allows us to replace an instruction at an arbritrary offset
+// in our instruction slice
+func (c *Compiler) replaceInstruction(pos int, newInstruction []byte) {
+	for i := 0; i < len(newInstruction); i++ {
+		c.instructions[pos+i] = newInstruction[i]
+	}
 }
 
 func (c *Compiler) ByteCode() *Bytecode {

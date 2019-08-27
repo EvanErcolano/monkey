@@ -71,6 +71,8 @@ const (
 	OpBang
 	OpMinus
 
+	OpJumpNotTruthy
+	OpJump
 	OpPop
 )
 
@@ -102,6 +104,8 @@ var definitions = map[Opcode]*Definition{
 	OpMinus: {"OpMinus", []int{}},
 
 	OpPop: {"OpPop", []int{}},
+	OpJumpNotTruthy: {"OpJumpNotTruthy", []int{2}},
+	OpJump: {"OpJump", []int{2}},
 }
 
 // Lookup looks up an Opcode definition via our definition map
