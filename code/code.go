@@ -55,7 +55,7 @@ type Opcode byte
 
 const (
 	OpConstant Opcode = iota
-
+	OpNull
 	OpTrue
 	OpFalse
 
@@ -87,6 +87,7 @@ type Definition struct {
 // what its human-readable name is
 var definitions = map[Opcode]*Definition{
 	OpConstant: &Definition{"OpConstant", []int{2}}, // only operand is 2 bytes wide
+	OpNull: {"OpNull", []int{}},
 	OpTrue:     {"OpTrue", []int{}},
 	OpFalse:    {"OpFalse", []int{}},
 

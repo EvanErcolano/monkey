@@ -15,6 +15,7 @@ var (
 	// these instead.
 	True  = &object.Boolean{Value: true}
 	False = &object.Boolean{Value: false}
+	Null  = &object.Null{}
 )
 
 // VM is our virtual machine utilizing a stack machine architecture. It holds a
@@ -91,7 +92,7 @@ func (vm *VM) Run() error {
 				return err
 			}
 		case code.OpJump:
-			// decode the integer address ahead of the opcode by 1
+			// decode the integer address ahead of the opcode
 			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
 			// set the instruction pointer to the target of our jump
 			// since the loop will inc ip with each iteration, we set
@@ -101,11 +102,17 @@ func (vm *VM) Run() error {
 			// decode the target address of our jumpIfNotTruthy
 			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
 			// inc IP by 2 so we skip over the 16bit operand we decoded above
+			// this will put us at the conditional result which we want to test
 			ip += 2
 
 			condition := vm.pop()
 			if !isTruthy(condition) {
 				ip = pos - 1
+			}
+		case code.OpNull:
+			err := vm.push(Null)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -120,8 +127,10 @@ func (vm *VM) executeBangOperator() error {
 		return vm.push(False)
 	case False:
 		return vm.push(True)
+	case Null:
+		return vm.push(True)
 	default:
-		// everything other than False is truthy
+		// everything other than False and Null is truthy
 		return vm.push(False)
 	}
 }
@@ -260,6 +269,8 @@ func isTruthy(obj object.Object) bool {
 	switch obj := obj.(type) {
 	case *object.Boolean:
 		return obj.Value
+	case *object.Null:
+		return false
 	default:
 		return true
 	}

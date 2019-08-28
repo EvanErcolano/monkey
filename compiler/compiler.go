@@ -81,20 +81,17 @@ func (c *Compiler) Compile(node ast.Node) error {
 			c.removeLastPop()
 		}
 
+		// emit an OpJump with a bogus value that we'll back patch
+		jumpPos := c.emit(code.OpJump, 9999)
+
+		// Back patch our jumpNotTruthy address value to the address located
+		// after the consequence + jump instruction
+		afterConsequencePos := len(c.instructions)
+		c.changeOperand(jumpNotTruthyPos, afterConsequencePos)
+
 		if node.Alternative == nil {
-			// calculate the bytecode position after our block of consequence instructions
-			afterConsequencePos := len(c.instructions)
-			// Fill in our bogus operand in jumpNotTruthy with the afterConsequence position
-			c.changeOperand(jumpNotTruthyPos, afterConsequencePos)
+			c.emit(code.OpNull)
 		} else {
-			// Emit an OpJump instruction with a bogus value that we will back-patch
-			jumpPos := c.emit(code.OpJump, 9999)
-
-			// use the instruction position after our jump instruction to fill in
-			// the address of where jumpNotTruthy (conditional jump) should go
-			afterConsequencePos := len(c.instructions)
-			c.changeOperand(jumpNotTruthyPos, afterConsequencePos)
-
 			err := c.Compile(node.Alternative)
 			if err != nil {
 				return err
@@ -103,11 +100,12 @@ func (c *Compiler) Compile(node ast.Node) error {
 			if c.lastInstructionIsPop() {
 				c.removeLastPop()
 			}
-
-			afterConsequencePos = len(c.instructions)
-			c.changeOperand(jumpPos, afterConsequencePos)
 		}
 
+		// Back patch our unconditional jump address to the position after the
+		// consequence (if it exists) / after the OpNull
+		afterAlternativePos := len(c.instructions)
+		c.changeOperand(jumpPos, afterAlternativePos)
 	case *ast.InfixExpression:
 		if node.Operator == "<" {
 			// re-ordering our < to a > by switching the order of operands
