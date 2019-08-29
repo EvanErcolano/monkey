@@ -51,7 +51,6 @@ func (c *Compiler) Compile(node ast.Node) error {
 		if err != nil {
 			return err
 		}
-
 		// Of our 3 types of statements [let, return, expr]:
 		// The first two explicitly reuse the value that their child expr
 		// nodes produces... while expr statements only wrap expessions so
@@ -60,6 +59,11 @@ func (c *Compiler) Compile(node ast.Node) error {
 		// stack clean and explicity remove them off of the stack after
 		// execution.
 		c.emit(code.OpPop)
+	case *ast.LetStatement:
+		err := c.Compile(node.Value)
+		if err != nil {
+			return err
+		}
 	case *ast.IfExpression:
 		err := c.Compile(node.Condition)
 		if err != nil {

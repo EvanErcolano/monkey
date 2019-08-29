@@ -74,6 +74,8 @@ const (
 	OpJumpNotTruthy
 	OpJump
 	OpPop
+	OpSetGlobal
+	OpGetGlobal
 )
 
 // Definition helps make our opcodes readable and
@@ -87,7 +89,7 @@ type Definition struct {
 // what its human-readable name is
 var definitions = map[Opcode]*Definition{
 	OpConstant: &Definition{"OpConstant", []int{2}}, // only operand is 2 bytes wide
-	OpNull: {"OpNull", []int{}},
+	OpNull:     {"OpNull", []int{}},
 	OpTrue:     {"OpTrue", []int{}},
 	OpFalse:    {"OpFalse", []int{}},
 
@@ -104,9 +106,11 @@ var definitions = map[Opcode]*Definition{
 	OpBang:  {"OpBang", []int{}},
 	OpMinus: {"OpMinus", []int{}},
 
-	OpPop: {"OpPop", []int{}},
+	OpPop:           {"OpPop", []int{}},
 	OpJumpNotTruthy: {"OpJumpNotTruthy", []int{2}},
-	OpJump: {"OpJump", []int{2}},
+	OpJump:          {"OpJump", []int{2}},
+	OpSetGlobal:     {"OpSetGlobal", []int{2}},
+	OpGetGlobal:     {"OpGetGlobal", []int{2}},
 }
 
 // Lookup looks up an Opcode definition via our definition map
