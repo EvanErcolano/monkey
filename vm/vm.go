@@ -8,6 +8,7 @@ import (
 )
 
 const StackSize = 2048
+const GlobalSize = 65536
 
 var (
 	// True + False are Immutable unique values, so we define them globally here.
@@ -23,9 +24,9 @@ var (
 type VM struct {
 	constants    []object.Object   // the VM's constant pool
 	instructions code.Instructions // the instructions given to the VM
-
-	stack []object.Object
-	sp    int // Always points to the next value. Top of stack is stack[sp-1]
+	stack        []object.Object
+	sp           int // Always points to the next value. Top of stack is stack[sp-1]
+	globals      []object.Object
 }
 
 // New initializes our Virtual machine with bytecode
@@ -33,10 +34,18 @@ func New(bytecode *compiler.Bytecode) *VM {
 	return &VM{
 		instructions: bytecode.Instructions,
 		constants:    bytecode.Constants,
-
-		stack: make([]object.Object, StackSize),
-		sp:    0,
+		stack:        make([]object.Object, StackSize),
+		sp:           0,
+		globals:      make([]object.Object, GlobalSize), // global's store
 	}
+}
+
+// NewWithGlobalsStore Allows us to create a new VM with a pre-existing
+// global store. Used by our REPL.
+func NewWithGlobalsStore(bytecode *compiler.Bytecode, s []object.Object) *VM {
+	vm := New(bytecode)
+	vm.globals = s
+	return vm
 }
 
 // Run initiates our VM's fetch-decode-execute cycle.
@@ -111,6 +120,18 @@ func (vm *VM) Run() error {
 			}
 		case code.OpNull:
 			err := vm.push(Null)
+			if err != nil {
+				return err
+			}
+		case code.OpSetGlobal:
+			globalIndex := code.ReadUint16(vm.instructions[ip+1:])
+			ip += 2
+			vm.globals[globalIndex] = vm.pop()
+		case code.OpGetGlobal:
+			globalIndex := code.ReadUint16(vm.instructions[ip+1:])
+			ip += 2
+
+			err := vm.push(vm.globals[globalIndex])
 			if err != nil {
 				return err
 			}

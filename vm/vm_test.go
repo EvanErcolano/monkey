@@ -15,8 +15,18 @@ type vmTestCase struct {
 	expected interface{}
 }
 
+func TestGlobalLetStatements(t *testing.T) {
+	tests := []vmTestCase{
+        {"let one = 1; one", 1},
+        {"let one = 1; let two = 2; one + two", 3},
+        {"let one = 1; let two = one + one; one + two", 3},
+	}
+
+	runVmTests(t, tests)
+}
+
 func TestConditionals(t *testing.T) {
-	tests := []vmTestCase {
+	tests := []vmTestCase{
 		{"if (true) { 10 }", 10},
 		{"if (true) { 10 } else { 20 }", 10},
 		{"if (false) { 10 } else { 20 }", 20},
@@ -26,8 +36,7 @@ func TestConditionals(t *testing.T) {
 		{"if (1 > 2) { 10 } else { 20 }", 20},
 		{"if (1 > 2) { 10 }", Null},
 		{"if (false) { 10 }", Null},
-        {"if ((if (false) { 10 })) { 10 } else { 20 }", 20},
-
+		{"if ((if (false) { 10 })) { 10 } else { 20 }", 20},
 	}
 
 	runVmTests(t, tests)
