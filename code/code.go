@@ -76,6 +76,8 @@ const (
 	OpPop
 	OpSetGlobal
 	OpGetGlobal
+
+	OpArray
 )
 
 // Definition helps make our opcodes readable and
@@ -111,8 +113,9 @@ var definitions = map[Opcode]*Definition{
 	OpJump:          {"OpJump", []int{2}},
 	OpSetGlobal:     {"OpSetGlobal", []int{2}},
 	OpGetGlobal:     {"OpGetGlobal", []int{2}},
-}
 
+	OpArray: {"OpArray", []int{2}}, // 2bytes w/ capacity for 65535 items
+}
 // Lookup looks up an Opcode definition via our definition map
 // Either returns a Definition or an opcode undefined error
 func Lookup(op byte) (*Definition, error) {
