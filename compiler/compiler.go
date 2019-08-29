@@ -31,6 +31,13 @@ func New() *Compiler {
 	}
 }
 
+func NewWithState(s *SymbolTable, constants []object.Object) *Compiler {
+	compiler := New()
+	compiler.SymbolTable = s
+	compiler.constants = constants
+	return compiler
+}
+
 // Compile our ast down to it's respective bytecode representation.
 func (c *Compiler) Compile(node ast.Node) error {
 	switch node := node.(type) {
