@@ -18,6 +18,7 @@ type Compiler struct {
 	constants           []object.Object // our constant pool, we refer to this by index
 	lastInstruction     EmittedInstruction
 	previousInstruction EmittedInstruction
+	SymbolTable         *SymbolTable
 }
 
 func New() *Compiler {
@@ -26,6 +27,7 @@ func New() *Compiler {
 		constants:           []object.Object{},
 		lastInstruction:     EmittedInstruction{},
 		previousInstruction: EmittedInstruction{},
+		SymbolTable:         NewSymbolTable(),
 	}
 }
 
@@ -59,11 +61,22 @@ func (c *Compiler) Compile(node ast.Node) error {
 		// stack clean and explicity remove them off of the stack after
 		// execution.
 		c.emit(code.OpPop)
+	case *ast.Identifier:
+		// Previously in our evaluator we could only determine if a var
+		// existed at runtime - now we can figure this out at compile
+		// time, before we can pass the bytecode to the VM!
+		symbol, ok := c.SymbolTable.Resolve(node.Value)
+		if !ok {
+			return fmt.Errorf("undefined variable %s", node.Value)
+		}
+		c.emit(code.OpGetGlobal, symbol.Index)
 	case *ast.LetStatement:
 		err := c.Compile(node.Value)
 		if err != nil {
 			return err
 		}
+		symbol := c.SymbolTable.Define(node.Name.Value)
+		c.emit(code.OpSetGlobal, symbol.Index)
 	case *ast.IfExpression:
 		err := c.Compile(node.Condition)
 		if err != nil {
