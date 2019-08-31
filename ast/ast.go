@@ -300,7 +300,7 @@ func (al *ArrayLiteral) String() string {
 
 type IndexExpression struct {
 	Token token.Token // the [ token
-	Left  Expression
+	Left  Expression // the expression being indexed into
 	Index Expression
 }
 

@@ -79,6 +79,7 @@ const (
 
 	OpArray
 	OpHash
+	OpIndex
 )
 
 // Definition helps make our opcodes readable and
@@ -117,6 +118,7 @@ var definitions = map[Opcode]*Definition{
 
 	OpArray: {"OpArray", []int{2}}, // max len of list is 2^16
 	OpHash: {"OpHash", []int{2}},
+	OpIndex: {"OpIndex", []int{}},
 }
 // Lookup looks up an Opcode definition via our definition map
 // Either returns a Definition or an opcode undefined error
