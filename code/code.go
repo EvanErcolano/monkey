@@ -78,6 +78,7 @@ const (
 	OpGetGlobal
 
 	OpArray
+	OpHash
 )
 
 // Definition helps make our opcodes readable and
@@ -114,7 +115,8 @@ var definitions = map[Opcode]*Definition{
 	OpSetGlobal:     {"OpSetGlobal", []int{2}},
 	OpGetGlobal:     {"OpGetGlobal", []int{2}},
 
-	OpArray: {"OpArray", []int{2}}, // 2bytes w/ capacity for 65535 items
+	OpArray: {"OpArray", []int{2}}, // max len of list is 2^16
+	OpHash: {"OpHash", []int{2}},
 }
 // Lookup looks up an Opcode definition via our definition map
 // Either returns a Definition or an opcode undefined error
