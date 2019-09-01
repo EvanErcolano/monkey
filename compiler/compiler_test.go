@@ -15,25 +15,67 @@ type compilerTestCase struct {
 	expectedConstants    []interface{}
 	expectedInstructions []code.Instructions
 }
-func TestFunctionsWithoutReturnValue(t *testing.T) {
-    tests := []compilerTestCase{
-        {
-            input: `fn() { }`,
-            expectedConstants: []interface{}{
-                []code.Instructions{
-                    code.Make(code.OpReturn),
-                },
-            },
-            expectedInstructions: []code.Instructions{
-                code.Make(code.OpConstant, 0),
-                code.Make(code.OpPop),
-            },
-        },
-    }
 
-    runCompilerTests(t, tests)
+func TestFunctionCalls(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			input: `fn() { 24 }();`,
+			expectedConstants: []interface{}{
+				24,
+				[]code.Instructions{
+					code.Make(code.OpConstant, 0), // The literal "24"
+					code.Make(code.OpReturnValue),
+				},
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 1), // The compiled function
+				code.Make(code.OpCall),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input: `
+            let noArg = fn() { 24 };
+            noArg();
+            `,
+			expectedConstants: []interface{}{
+				24,
+				[]code.Instructions{
+					code.Make(code.OpConstant, 0), // literal 24
+					code.Make(code.OpReturnValue),
+				},
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 1), // our compiled func
+				code.Make(code.OpSetGlobal, 0),
+				code.Make(code.OpGetGlobal, 0),
+				code.Make(code.OpCall),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
 }
 
+func TestFunctionsWithoutReturnValue(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			input: `fn() { }`,
+			expectedConstants: []interface{}{
+				[]code.Instructions{
+					code.Make(code.OpReturn),
+				},
+			},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpPop),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
+}
 
 func TestCompilerScopes(t *testing.T) {
 	compiler := New()
