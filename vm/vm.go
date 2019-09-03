@@ -8,12 +8,12 @@ import (
 )
 
 const StackSize = 2048
-const GlobalSize = 65536
+const GlobalsSize = 65536
+const MaxFrames = 1024
 
 var (
-	// True + False are Immutable unique values, so we define them globally here.
-	// No need to create multiple boolean objects when we can just reference
-	// these instead.
+	// True , False, Null are Immutable unique values, so we define them globally.
+	// No need to create multiple boolean objects when we can reference one instance.
 	True  = &object.Boolean{Value: true}
 	False = &object.Boolean{Value: false}
 	Null  = &object.Null{}
@@ -22,21 +22,36 @@ var (
 // VM is our virtual machine utilizing a stack machine architecture. It holds a
 // constant pool and the instructions emitted by our bytecode compiler.
 type VM struct {
-	constants    []object.Object   // the VM's constant pool
-	instructions code.Instructions // the instructions given to the VM
-	stack        []object.Object
-	sp           int // Always points to the next value. Top of stack is stack[sp-1]
-	globals      []object.Object
+	constants []object.Object // the VM's constant pool
+
+	stack []object.Object // Our data stack
+	sp    int             // Always points to the next value. Top of stack is stack[sp-1]
+
+	globals []object.Object
+
+	frames      []*Frame // Our frame/call stack
+	framesIndex int
 }
 
 // New initializes our Virtual machine with bytecode
 func New(bytecode *compiler.Bytecode) *VM {
+	// Insert our bytecode into the first stack frame
+	mainFn := &object.CompiledFunction{Instructions: bytecode.Instructions}
+	mainFrame := NewFrame(mainFn)
+
+	frames := make([]*Frame, MaxFrames)
+	frames[0] = mainFrame
+
 	return &VM{
-		instructions: bytecode.Instructions,
-		constants:    bytecode.Constants,
-		stack:        make([]object.Object, StackSize),
-		sp:           0,
-		globals:      make([]object.Object, GlobalSize), // global's store
+		constants: bytecode.Constants,
+
+		stack: make([]object.Object, StackSize),
+		sp:    0,
+
+		globals: make([]object.Object, GlobalsSize),
+
+		frames:      frames,
+		framesIndex: 1,
 	}
 }
 
@@ -48,18 +63,41 @@ func NewWithGlobalsStore(bytecode *compiler.Bytecode, s []object.Object) *VM {
 	return vm
 }
 
+// currentFrame peeks the current frame on our call stack
+func (vm *VM) currentFrame() *Frame {
+	return vm.frames[vm.framesIndex-1]
+}
+
+func (vm *VM) pushFrame(f *Frame) {
+	vm.frames[vm.framesIndex] = f
+	vm.framesIndex++
+}
+
+func (vm *VM) popFrame() *Frame {
+	vm.framesIndex--
+	return vm.frames[vm.framesIndex]
+}
+
 // Run initiates our VM's fetch-decode-execute cycle.
 func (vm *VM) Run() error {
-	// FETCH our instruction
-	for ip := 0; ip < len(vm.instructions); ip++ {
-		op := code.Opcode(vm.instructions[ip])
+	var ip int
+	var ins code.Instructions
+	var op code.Opcode
+
+	// FETCH our instruction at our current frame
+	for vm.currentFrame().ip < len(vm.currentFrame().Instructions())-1 {
+		vm.currentFrame().ip++
+
+		ip = vm.currentFrame().ip
+		ins = vm.currentFrame().Instructions()
+		op = code.Opcode(ins[ip])
 
 		// DECODE the instruction
 		switch op {
 		case code.OpConstant:
 			// EXECUTE the instruction based off of the opcode
-			constIndex := code.ReadUint16(vm.instructions[ip+1:])
-			ip += 2
+			constIndex := code.ReadUint16(ins[ip+1:])
+			vm.currentFrame().ip += 2
 
 			// push our constants onto the stack
 			err := vm.push(vm.constants[constIndex])
@@ -102,21 +140,21 @@ func (vm *VM) Run() error {
 			}
 		case code.OpJump:
 			// decode the integer address ahead of the opcode
-			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
+			pos := int(code.ReadUint16(ins[ip+1:]))
 			// set the instruction pointer to the target of our jump
 			// since the loop will inc ip with each iteration, we set
 			// the ip to the position directly before where we want
-			ip = pos - 1
+			vm.currentFrame().ip = pos - 1
 		case code.OpJumpNotTruthy:
 			// decode the target address of our jumpIfNotTruthy
-			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
+			pos := int(code.ReadUint16(ins[ip+1:]))
 			// inc IP by 2 so we skip over the 16bit operand we decoded above
 			// this will put us at the conditional result which we want to test
-			ip += 2
+			vm.currentFrame().ip += 2
 
 			condition := vm.pop()
 			if !isTruthy(condition) {
-				ip = pos - 1
+				vm.currentFrame().ip = pos - 1
 			}
 		case code.OpNull:
 			err := vm.push(Null)
@@ -124,20 +162,20 @@ func (vm *VM) Run() error {
 				return err
 			}
 		case code.OpSetGlobal:
-			globalIndex := code.ReadUint16(vm.instructions[ip+1:])
-			ip += 2
+			globalIndex := code.ReadUint16(ins[ip+1:])
+			vm.currentFrame().ip += 2
 			vm.globals[globalIndex] = vm.pop()
 		case code.OpGetGlobal:
-			globalIndex := code.ReadUint16(vm.instructions[ip+1:])
-			ip += 2
+			globalIndex := code.ReadUint16(ins[ip+1:])
+			vm.currentFrame().ip += 2
 
 			err := vm.push(vm.globals[globalIndex])
 			if err != nil {
 				return err
 			}
 		case code.OpArray:
-			numElements := int(code.ReadUint16(vm.instructions[ip+1:]))
-			ip += 2
+			numElements := int(code.ReadUint16(ins[ip+1:]))
+			vm.currentFrame().ip += 2
 
 			array := vm.buildArray(vm.sp-numElements, vm.sp)
 			vm.sp = vm.sp - numElements
@@ -147,8 +185,8 @@ func (vm *VM) Run() error {
 				return err
 			}
 		case code.OpHash:
-			numElements := int(code.ReadUint16(vm.instructions[ip+1:]))
-			ip += 2
+			numElements := int(code.ReadUint16(ins[ip+1:]))
+			vm.currentFrame().ip += 2
 
 			hash, err := vm.buildHash(vm.sp-numElements, vm.sp)
 			if err != nil {
@@ -168,6 +206,35 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+		case code.OpReturnValue:
+			// pop current object off of the stack (this is our return value!!)
+			returnValue := vm.pop()
+
+			// pop the frame associated w/ the func we just executed off the frame stack
+			vm.popFrame()
+			// pop the current Compiled func we just executed off of our data stack
+			vm.pop()
+
+			// push the returnValue to the top of our data stack
+			err := vm.push(returnValue)
+			if err != nil {
+				return err
+			}
+		case code.OpReturn:
+			vm.popFrame()
+			vm.pop()
+			
+			err := vm.push(Null)
+			if err != nil {
+				return err
+			}
+		case code.OpCall:
+			fn, ok := vm.stack[vm.sp-1].(*object.CompiledFunction)
+			if !ok {
+				return fmt.Errorf("attempting to call non-function")
+			}
+			frame := NewFrame(fn)
+			vm.pushFrame(frame)
 		}
 	}
 	return nil
