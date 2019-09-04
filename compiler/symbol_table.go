@@ -4,6 +4,7 @@ type SymbolScope string
 
 const (
 	GlobalScope SymbolScope = "GLOBAL"
+	LocalScope  SymbolScope = "LOCAL"
 )
 
 // Symbol holds information about it's related identifier
@@ -15,6 +16,8 @@ type Symbol struct {
 }
 
 type SymbolTable struct {
+	Outer *SymbolTable
+
 	store          map[string]Symbol
 	numDefinitions int
 }
@@ -24,14 +27,34 @@ func NewSymbolTable() *SymbolTable {
 	return &SymbolTable{store: s}
 }
 
+// NewEnclosedSymbolTable allows us to create a symbol table enclosed in
+// another previously existing table
+func NewEnclosedSymbolTable(outer *SymbolTable) *SymbolTable {
+	s := NewSymbolTable()
+	s.Outer = outer
+	return s
+}
+
 func (s *SymbolTable) Define(name string) Symbol {
 	symbol := Symbol{Name: name, Index: s.numDefinitions, Scope: GlobalScope}
+	if s.Outer == nil {
+		symbol.Scope = GlobalScope
+	} else {
+		symbol.Scope = LocalScope
+	}
+
 	s.store[name] = symbol
 	s.numDefinitions++
 	return symbol
 }
 
+// Resolve rescursively resolves variables on arbitraily deeply nested
+// symbol tables
 func (s *SymbolTable) Resolve(name string) (Symbol, bool) {
 	obj, ok := s.store[name]
+	if !ok && s.Outer != nil {
+		obj, ok = s.Outer.Resolve(name)
+		return obj, ok
+	}
 	return obj, ok
 }
