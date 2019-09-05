@@ -37,7 +37,7 @@ type VM struct {
 func New(bytecode *compiler.Bytecode) *VM {
 	// Insert our bytecode into the first stack frame
 	mainFn := &object.CompiledFunction{Instructions: bytecode.Instructions}
-	mainFrame := NewFrame(mainFn)
+	mainFrame := NewFrame(mainFn, 0)
 
 	frames := make([]*Frame, MaxFrames)
 	frames[0] = mainFrame
@@ -173,6 +173,26 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+		case code.OpSetLocal:
+			localIndex := code.ReadUint8(ins[ip+1:])
+			vm.currentFrame().ip++
+
+			frame := vm.currentFrame()
+
+			// base ptr is right after our func call, localindex is the unique
+			// 0 based index for our local variables.
+			vm.stack[frame.basePointer+int(localIndex)] = vm.pop()
+		case code.OpGetLocal:
+			localIndex := code.ReadUint8(ins[ip+1:])
+			vm.currentFrame().ip++
+
+			currFrame := vm.currentFrame()
+
+			err := vm.push(vm.stack[currFrame.basePointer+int(localIndex)])
+			if err != nil {
+				return err
+			}
+
 		case code.OpArray:
 			numElements := int(code.ReadUint16(ins[ip+1:]))
 			vm.currentFrame().ip += 2
@@ -207,23 +227,20 @@ func (vm *VM) Run() error {
 				return err
 			}
 		case code.OpReturnValue:
-			// pop current object off of the stack (this is our return value!!)
 			returnValue := vm.pop()
 
-			// pop the frame associated w/ the func we just executed off the frame stack
-			vm.popFrame()
-			// pop the current Compiled func we just executed off of our data stack
-			vm.pop()
+			// pop the frame associated w/ the func we executed off the stack
+			frame := vm.popFrame()
+			vm.sp = frame.basePointer - 1
 
-			// push the returnValue to the top of our data stack
 			err := vm.push(returnValue)
 			if err != nil {
 				return err
 			}
 		case code.OpReturn:
-			vm.popFrame()
-			vm.pop()
-			
+			frame := vm.popFrame()
+			vm.sp = frame.basePointer - 1
+
 			err := vm.push(Null)
 			if err != nil {
 				return err
@@ -233,8 +250,14 @@ func (vm *VM) Run() error {
 			if !ok {
 				return fmt.Errorf("attempting to call non-function")
 			}
-			frame := NewFrame(fn)
+			// pass our curr location, "base ptr" / "frame ptr". This is the pos
+			// after our function call. We will use this to clean the stack up
+			// later, after the func is done executing.
+			frame := NewFrame(fn, vm.sp)
 			vm.pushFrame(frame)
+			// increase our stack ptr to create a "hole" for all of our local
+			// variables to fit into.
+			vm.sp = frame.basePointer + fn.NumLocals
 		}
 	}
 	return nil

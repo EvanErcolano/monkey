@@ -235,10 +235,11 @@ func (m *Macro) Inspect() string {
 // CompiledFunction represents a compiled function literal via it's
 // associated bytecode instructions
 type CompiledFunction struct {
-    Instructions code.Instructions
+	Instructions code.Instructions
+	NumLocals    int
 }
 
 func (cf *CompiledFunction) Type() ObjectType { return COMPILED_FUNCTION_OBJ }
 func (cf *CompiledFunction) Inspect() string {
-    return fmt.Sprintf("CompiledFunction[%p]", cf)
+	return fmt.Sprintf("CompiledFunction[%p]", cf)
 }
