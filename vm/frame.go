@@ -12,11 +12,12 @@ type Frame struct {
 }
 
 func NewFrame(fn *object.CompiledFunction, basePointer int) *Frame {
-	return &Frame{
+	f := &Frame{
 		fn:          fn,
 		ip:          -1,
 		basePointer: basePointer,
 	}
+	return f
 }
 
 func (f *Frame) Instructions() code.Instructions {

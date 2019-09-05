@@ -246,21 +246,37 @@ func (vm *VM) Run() error {
 				return err
 			}
 		case code.OpCall:
-			vm.currentFrame().ip += 1
-			fn, ok := vm.stack[vm.sp-1].(*object.CompiledFunction)
-			if !ok {
-				return fmt.Errorf("attempting to call non-function")
+			numArgs := code.ReadUint8(ins[ip+1:])
+			vm.currentFrame().ip++
+
+			err := vm.callFunction(int(numArgs))
+			if err != nil {
+				return err
 			}
-			// pass our curr location, "base ptr" / "frame ptr". This is the pos
-			// after our function call. We will use this to clean the stack up
-			// later, after the func is done executing.
-			frame := NewFrame(fn, vm.sp)
-			vm.pushFrame(frame)
-			// increase our stack ptr to create a "hole" for all of our local
-			// variables to fit into.
-			vm.sp = frame.basePointer + fn.NumLocals
 		}
 	}
+	return nil
+}
+
+// callFunction does all the work of calling a function. This involves
+// correctly indexing into the function and jumping over the parameters
+// as well as correctly passing the base ptr when we create a new frame
+func (vm *VM) callFunction(numArgs int) error {
+	fn, ok := vm.stack[vm.sp-1-numArgs].(*object.CompiledFunction)
+	if !ok {
+		return fmt.Errorf("calling non-function")
+	}
+
+	if numArgs != fn.NumParameters {
+		return fmt.Errorf("wrong number of arguments: want=%d, got=%d",
+			fn.NumParameters, numArgs)
+	}
+
+	frame := NewFrame(fn, vm.sp-numArgs)
+	vm.pushFrame(frame)
+
+	vm.sp = frame.basePointer + fn.NumLocals
+
 	return nil
 }
 

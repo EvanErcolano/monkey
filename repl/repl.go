@@ -1,12 +1,12 @@
 package repl
 
 import (
-	"monkey/object"
 	"bufio"
 	"fmt"
 	"io"
 	"monkey/compiler"
 	"monkey/lexer"
+	"monkey/object"
 	"monkey/parser"
 	"monkey/vm"
 )
@@ -30,7 +30,7 @@ func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 
 	constants := []object.Object{}
-	globals := make([]object.Object, vm.GlobalSize)
+	globals := make([]object.Object, vm.GlobalsSize)
 	symbolTable := compiler.NewSymbolTable()
 
 	for {
@@ -57,7 +57,10 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		machine := vm.NewWithGlobalsStore(comp.ByteCode(), globals)
+		code := comp.ByteCode()
+		constants = code.Constants
+
+		machine := vm.NewWithGlobalsStore(code, globals)
 		err = machine.Run()
 		if err != nil {
 			fmt.Fprintf(out, "Executing bytecode failed:\n %s\n", err)

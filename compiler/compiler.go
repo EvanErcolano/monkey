@@ -10,10 +10,12 @@ import (
 
 // Compiler is a bytecode compiler
 type Compiler struct {
-	constants   []object.Object
+	constants []object.Object
+
 	symbolTable *SymbolTable
-	scopes      []CompilationScope // our stack of CompilationScopes
-	scopeIndex  int
+
+	scopes     []CompilationScope
+	scopeIndex int
 }
 
 func New() *Compiler {
@@ -277,8 +279,9 @@ func (c *Compiler) Compile(node ast.Node) error {
 		instructions := c.leaveScope()
 
 		compiledFn := &object.CompiledFunction{
-			Instructions: instructions,
-			NumLocals:    numLocals,
+			Instructions:  instructions,
+			NumLocals:     numLocals,
+			NumParameters: len(node.Parameters),
 		}
 		c.emit(code.OpConstant, c.addConstant(compiledFn))
 	case *ast.ReturnStatement:
