@@ -87,6 +87,8 @@ const (
 	OpCall
 	OpReturnValue
 	OpReturn // nothing to return -> return null
+
+	OpGetBuiltin
 )
 
 // Definition helps make our opcodes readable and
@@ -133,6 +135,8 @@ var definitions = map[Opcode]*Definition{
 	OpCall:        {"OpCall", []int{1}},
 	OpReturnValue: {"OpReturnValue", []int{}},
 	OpReturn:      {"OpReturn", []int{}},
+
+	OpGetBuiltin: {"OpGetBuiltin", []int{1}}, // 256 possible builtins
 }
 
 // Lookup looks up an Opcode definition via our definition map
