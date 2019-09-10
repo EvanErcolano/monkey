@@ -46,6 +46,8 @@ func (ins Instructions) fmtInstruction(def *Definition, operands []int) string {
 		return def.Name
 	case 1:
 		return fmt.Sprintf("%s %d", def.Name, operands[0])
+	case 2:
+		return fmt.Sprintf("%s %d %d", def.Name, operands[0], operands[1])
 	}
 
 	return fmt.Sprintf("ERROR: unhandled operandCount for %s\n", def.Name)
@@ -89,6 +91,7 @@ const (
 	OpReturn // nothing to return -> return null
 
 	OpGetBuiltin
+	OpClosure
 )
 
 // Definition helps make our opcodes readable and
@@ -137,6 +140,11 @@ var definitions = map[Opcode]*Definition{
 	OpReturn:      {"OpReturn", []int{}},
 
 	OpGetBuiltin: {"OpGetBuiltin", []int{1}}, // 256 possible builtins
+
+	// OpClosure has 2 operands:
+	// 1) constant index which specifies where in the constant pool the func is
+	// 2) number of free variables needed for the closure
+	OpClosure: {"OpClosure", []int{2, 1}},
 }
 
 // Lookup looks up an Opcode definition via our definition map
