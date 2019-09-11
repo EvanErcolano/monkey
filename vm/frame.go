@@ -6,14 +6,14 @@ import (
 )
 
 type Frame struct {
-	fn          *object.CompiledFunction // the frame's associated function
-	ip          int                      // internal IP ptr for this specific frame and func
-	basePointer int                      // keeps track of the stack ptr pos at the call site
+	cl          *object.Closure // the frame's associated closure
+	ip          int             // internal IP ptr for this specific frame and func
+	basePointer int             // keeps track of the stack ptr pos at the call site
 }
 
-func NewFrame(fn *object.CompiledFunction, basePointer int) *Frame {
+func NewFrame(cl *object.Closure, basePointer int) *Frame {
 	f := &Frame{
-		fn:          fn,
+		cl:          cl,
 		ip:          -1,
 		basePointer: basePointer,
 	}
@@ -21,5 +21,5 @@ func NewFrame(fn *object.CompiledFunction, basePointer int) *Frame {
 }
 
 func (f *Frame) Instructions() code.Instructions {
-	return f.fn.Instructions
+	return f.cl.Fn.Instructions
 }
