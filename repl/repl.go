@@ -61,6 +61,7 @@ func Start(in io.Reader, out io.Writer) {
 		}
 
 		code := comp.ByteCode()
+		print(code.Instructions.String())
 		constants = code.Constants
 
 		machine := vm.NewWithGlobalsStore(code, globals)

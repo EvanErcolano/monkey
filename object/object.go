@@ -249,7 +249,7 @@ func (cf *CompiledFunction) Inspect() string {
 // Closure wraps a compiled function in addition to providng a store for free
 // variables. This is similar to the env field on our regular function type
 type Closure struct {
-	fn   *CompiledFunction
+	Fn   *CompiledFunction
 	Free []Object
 }
 
