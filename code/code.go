@@ -92,6 +92,8 @@ const (
 
 	OpGetBuiltin
 	OpClosure
+	OpGetFree
+
 )
 
 // Definition helps make our opcodes readable and
@@ -145,6 +147,7 @@ var definitions = map[Opcode]*Definition{
 	// 1) constant index which specifies where in the constant pool the func is
 	// 2) number of free variables needed for the closure
 	OpClosure: {"OpClosure", []int{2, 1}},
+	OpGetFree: {"OpGetFree", []int{1}},
 }
 
 // Lookup looks up an Opcode definition via our definition map
