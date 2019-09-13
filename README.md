@@ -2,12 +2,12 @@
 
 This repo contains two implementations of the monkey programming language. Both implementations share the same frontends (lexer + parser), however their backends differ. The first backend is a tree-walking interpreter, the second is a single pass bytecode compiler with a companion virtual machine.
 
-The whole shebang is done in go. Ultimately whether the interpreter or compiler+vm is running, the monkey code eventually gets executed in Go.
+Ultimately whether the interpreter or compiler+vm is running, the monkey code eventually gets executed in native Go.
 
 ## To Start the REPL
 `go run main.go`
 
-The REPL is configured to use the faster backend - the bytecode compiler and virtual machine. Monkey supports a wide variety of features.
+The REPL is configured to use the faster backend - the bytecode compiler and virtual machine. Monkey supports a wide variety of features which will be described below.
 
 ## Supported Types
 
@@ -132,7 +132,9 @@ let fibonacci = fn(x) {
 fibonacci(10);
 ```
 
-## Statements
+## Statements and Expressions
+
+**Statements**
 
 Programs in Monkey are a series of statements.
 
@@ -146,13 +148,13 @@ Statements don't produce values. There are three types of statements in Monkey.
     - wrap expressions, these values are not reused
 
 
-## Expressions
+**Expressions**
 
 Expressions produce values. These values can be reused in other expressions and combined with the statements listed in the previous section in order to bind an expression to variable or return an expression, etc.
 
 Monkey supports both infix and prefix expressions.
 
-## Let Statements
+**Let Statements**
 
 Let statements allow you to bind expressions to names in the environment. Let statements scope to where you define them. If you use a let statement in the global scope it will be available to all functions. If you use it within a function, it will be grouped to the lexical scope of the function.
 
@@ -164,7 +166,7 @@ let concat = "fizz" + "buzz"
 ```
 
 
-## If expressions
+**If expressions**
 
 Monkey supports conditional logic / flow control. This takes the form of:
 
