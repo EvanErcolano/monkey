@@ -15,6 +15,7 @@ The REPL is configured to use the faster backend - the bytecode compiler and vir
 
 Booleans are backed by go's native bool type.
 
+
 ```
 true
 false
@@ -23,6 +24,9 @@ false
 **Strings**
 
 Strings are backed by go's native string type. Printing is supported via the built-in puts() function. String concatenation is supported with the `+` operator. Strings in Monkey take the form of characters delimited by a pair of double quotes.
+
+Examples:
+
 
 ```
 "Graciela"
@@ -36,6 +40,9 @@ puts("Monkey")
 **Integers**
 
 Integers are backed by go's native int type. Monkey supports basic arithmetic operations on integers.
+
+Examples:
+
 
 ```
 1
@@ -52,11 +59,14 @@ Integers are backed by go's native int type. Monkey supports basic arithmetic op
 
 Arrays are backed by go's native slice type. Arrays are not scoped to a particular type in Monkey so you can mix and match to your hearts content. Monkey arrays take the form:
 
-`[<expression>, <expression>, ...]`
+`[<expression>, <expression>, ...];`
 
 You can index into an Array with an index expression. Array index expressions take the form:
 
- `<array>[<expression>]`
+ `<array>[<expression>];`
+
+Examples:
+
 
 ```
 ["Ralph", "Abigail", "Bret", "Alejandro"]
@@ -74,13 +84,15 @@ people[3] -> "Alejandro"
 
 Monkey's kv data type is the Hash and it is backed by a go map. Like Arrays, they are not typed. Hashes take the form:
 
-`{<expression>:<expression, <expression>:<expression, ....}`
+`{<expression>:<expression, <expression>:<expression, ....};`
 
 You can index into a Hash with an index expression. Hash index expressions takes the form:
 
- `<hash>[<expression>]`
+ `<hash>[<expression>];`
 
-```
+Examples:
+
+```javascript
 {1:2, 3:4, 5:6}"
 let animals = {"Rodrigo":"parrot", "William":"giraffe", "Matt":"octopus"}"
 
@@ -91,7 +103,34 @@ animals["Rod" + "rigo"] -> "parrot"
 
 **Functions**
 
-lorem ipsum...
+Functions are first class in monkey. Additionally, closures are supported. If you don't have an explicit return in your monkey function, it will implicitly return the last expression.
+
+Functions in Monkey take the form:
+
+```
+fn(<optional comma-delimited identifiers>) {
+    <optional statements>
+    <optional return statement>
+}
+```
+
+Example closure w/ self referential fibonacci function:
+
+```
+let fibonacci = fn(x) {
+  if (x == 0) {
+    return 0;
+  } else {
+    if (x == 1) {
+      return 1;
+    } else {
+      return fibonacci(x - 1) + fibonacci(x - 2);
+    }
+  }
+};
+
+fibonacci(10);
+```
 
 ## Statements
 
@@ -111,11 +150,32 @@ Statements don't produce values. There are three types of statements in Monkey.
 
 Expressions produce values. These values can be reused in other expressions and combined with the statements listed in the previous section in order to bind an expression to variable or return an expression, etc.
 
-There are two type of expressions in Monkey:
+Monkey supports both infix and prefix expressions.
 
-1. Infix Expressions
-2. Prefix Expressions
+## Let Statements
 
-explain...
+Let statements allow you to bind expressions to names in the environment. Let statements scope to where you define them. If you use a let statement in the global scope it will be available to all functions. If you use it within a function, it will be grouped to the lexical scope of the function.
 
-### If expressions
+`let <name> = <expression>;`
+
+```
+let result = 5 + 5 * 2 / 9
+let concat = "fizz" + "buzz"
+```
+
+
+## If expressions
+
+Monkey supports conditional logic / flow control. This takes the form of:
+
+`if (<expression>) { <statements> } else { <statements> };`
+
+A nice feature of Monkey is it doesn't use if statements but rather if expressions. This allows you to assign to a variable based on conditional logic.
+
+```
+let comparison = 5 > 3;
+
+let val = if (comparison) { "Greater than" } else { "less than or equal"};
+
+val -> "Greater than"
+```
