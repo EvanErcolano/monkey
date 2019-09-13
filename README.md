@@ -5,7 +5,7 @@ This repo contains two implementations of the monkey programming language. Both 
 The whole shebang is done in go. Ultimately whether the interpreter or compiler+vm is running, the monkey code eventually gets executed in Go.
 
 ## To Start the REPL
-`go run main.go`
+`go run main.go`
 
 The REPL is configured to use the faster backend - the bytecode compiler and virtual machine. Monkey supports a wide variety of features.
 
